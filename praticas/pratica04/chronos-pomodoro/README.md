@@ -1,95 +1,422 @@
-# Tarefa: identidade visual (favicon, título, PWA) e áudios para alerta de fim de ciclo
+# Atualizando o título da aba por página (document.title)
 
 ## Objetivo
 
-1. **Pasta `public/`** — deixar o app com **título** adequado, **favicon** nos navegadores e **Web App Manifest** para o Chrome/Edge oferecerem **“Instalar aplicativo”** (atalho em janela própria, sem precisar “instalar” um `.exe`).
-2. **Pasta `src/assets/audios/`** — incluir arquivos de som que serão usados **na próxima etapa** quando a tarefa for **completada** (contador chega a zero e disparamos `COMPLETE_TASK`): tocar um **alerta sonoro** para o usuário perceber o fim do Pomodoro.
+Melhorar a experiência de navegação da aplicação configurando o título da aba do navegador de forma dinâmica em cada página principal.
 
-Nada disso exige importar imagem no React: favicons e manifest são referenciados **direto no `index.html`** com URLs que começam em `/` (raiz do site servida pelo Vite).
+## Como esta prática foi definida
 
-## Onde colocar os arquivos no projeto
+Sem transcrição nesta etapa: a prática foi inferida diretamente dos arquivos modificados da branch, que mostram a adição de `useEffect` com `document.title` nas páginas:
 
-| Tipo | Pasta no repositório | Uso |
-|------|----------------------|-----|
-| Favicon, ícones PWA, manifest | `projeto-pomodoro/chronos-pomodoro/public/images/` | A aula organiza em subpasta **`public/images/favicon/`** (todos os PNG/SVG/ICO + `site.webmanifest` juntos). O Vite expõe `public/` na **raiz** do endereço: arquivo em `public/images/favicon/favicon.ico` vira URL **`/images/favicon/favicon.ico`**. |
-| Sons de notificação | `projeto-pomodoro/chronos-pomodoro/src/assets/audios/` | Importados no código com `import ... from '@/assets/audios/arquivo.mp3'` (ou caminho relativo), para o bundler incluir o arquivo no build. |
+- `Home`
+- `History`
+- `Settings`
+- `AboutPomodoro`
+- `NotFound`
 
-**Importante:** os caminhos em `index.html` e dentro de `site.webmanifest` (campo `icons[].src`) devem ser **idênticos** à estrutura real de pastas sob `public/`. Se os arquivos estiverem em `public/images/` sem subpasta `favicon`, use `/images/nome-do-arquivo.png`; se estiverem em `public/images/favicon/`, use `/images/favicon/nome-do-arquivo.png`.
+## O que foi implementado
 
-## Passo 1 — Gerar favicon e manifest
+Em cada página, foi adicionado:
 
-1. Prepare uma imagem quadrada (ex.: ícone baseado em **Lucide** ou logo simples).
-2. Use um gerador online — o da aula é o **[RealFaviconGenerator](https://realfavicongenerator.net/)** (“The real favicon generator…”): envie a imagem e baixe o pacote com **`.ico`**, **PNG** em vários tamanhos, **SVG** (se disponível), **apple-touch-icon** e **`site.webmanifest`**.
-3. Alternativa gratuita: **[favicon.io](https://favicon.io/)** (texto, emoji ou upload de imagem → pacote para download).
+1. `import { useEffect } from 'react';`
+2. `useEffect(() => { document.title = '...'; }, []);`
 
-Copie o conteúdo gerado para:
+Com isso, sempre que a página é aberta, o título da aba é atualizado para refletir o conteúdo atual da rota.
 
-- `public/images/favicon/` (recomendado na aula), **ou**
-- `public/images/` mantendo nomes claros (`favicon.ico`, `favicon.svg`, `apple-touch-icon.png`, `web-app-manifest-192x192.png`, etc.).
+## Benefícios
 
-## Passo 2 — Ajustar `index.html`
+- Melhora usabilidade (o usuário sabe em qual seção está só pela aba).
+- Ajuda em organização quando há várias abas abertas.
+- Prepara terreno para melhorias de SEO e acessibilidade sem dependências extras.
 
-Arquivo: `projeto-pomodoro/chronos-pomodoro/index.html`.
+## Resultado esperado
 
-- **`lang`:** manter `pt-BR` se o app for em português.
-- **`<title>`:** trocar para o nome do produto, ex.: **`Chronos Pomodoro`**.
-- **Links de ícone:** substituir o favicon padrão do Vite pelas tags que o gerador forneceu, **ajustando apenas os `href`** para a sua pasta (exemplo com subpasta `favicon`):
+- Home: título da aba exibe `Chronos Pomodoro`.
+- Histórico: título da aba exibe `Histórico - Chronos Pomodoro`.
+- Configurações: título da aba exibe `Configurações - Chronos Pomodoro`.
+- Sobre: título da aba exibe `Entenda a Técnica Pomodoro - Chronos Pomodoro`.
+- 404: título da aba exibe `Página não encontrada - Chronos Pomodoro`.
 
-```html
-<link rel="icon" type="image/png" href="/images/favicon/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/images/favicon/favicon.svg" />
-<link rel="icon" type="image/png" href="/images/favicon/favicon.png" />
-<link rel="shortcut icon" href="/images/favicon/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png" />
-<link rel="manifest" href="/images/favicon/site.webmanifest" />
+---
+
+## Código-fonte dos arquivos modificados nesta branch
+
+### `src/pages/Home/index.tsx`
+
+```tsx
+import { useEffect } from 'react';
+import { Container } from '../../components/Container';
+import { CountDown } from '../../components/CountDown';
+import { MainForm } from '../../components/MainForm';
+import { MainTemplate } from '../../templates/MainTemplate';
+
+export function Home() {
+  useEffect(() => {
+    document.title = 'Chronos Pomodoro';
+  }, []);
+
+  return (
+    <MainTemplate>
+      <Container>
+        <CountDown />
+      </Container>
+
+      <Container>
+        <MainForm />
+      </Container>
+    </MainTemplate>
+  );
+}
 ```
 
-## Passo 3 — `site.webmanifest` (PWA)
+### `src/pages/History/index.tsx`
 
-O arquivo costuma vir do gerador com campos como:
+```tsx
+import { TrashIcon } from 'lucide-react';
+import { Container } from '../../components/Container';
+import { DefaultButton } from '../../components/DefaultButton';
+import { Heading } from '../../components/Heading';
+import { MainTemplate } from '../../templates/MainTemplate';
 
-- `name` / `short_name` — nome longo e curto do app.
-- `lang` — ex.: `pt-BR`.
-- `icons` — lista com `src`, `sizes`, `type`, às vezes `purpose: "maskable"`.
-- `theme_color` / `background_color` — alinhados ao tema (ex.: cinza/verde do Chronos).
-- `display` — ex.: `standalone` (janela “limpa”, sem parecer aba de navegador).
-- `orientation`, `start_url`, `scope`, `description`, `id`.
+import styles from './styles.module.css';
+import { useTaskContext } from '../../contexts/TaskContext';
+import { formatDate } from '../../utils/formatDate';
+import { getTaskStatus } from '../../utils/getTaskStatus';
+import { sortTasks, type SortTasksOptions } from '../../utils/sortTasks';
+import { useEffect, useState } from 'react';
+import { TaskActionTypes } from '../../contexts/TaskContext/taskActions';
+import { showMessage } from '../../adapters/showMessage';
 
-Todos os **`src` dos ícones** no JSON devem ser URLs absolutas a partir da raiz, no mesmo padrão do `index.html`, por exemplo:
+export function History() {
+  const { state, dispatch } = useTaskContext();
+  const [confirmClearHistory, setConfirmClearHistory] = useState(false);
+  const hasTasks = state.tasks.length > 0;
 
-```json
-"src": "/images/favicon/web-app-manifest-192x192.png"
+  const [sortTasksOptions, setSortTaskOptions] = useState<SortTasksOptions>(
+    () => {
+      return {
+        tasks: sortTasks({ tasks: state.tasks }),
+        field: 'startDate',
+        direction: 'desc',
+      };
+    },
+  );
+
+  useEffect(() => {
+    setSortTaskOptions(prevState => ({
+      ...prevState,
+      tasks: sortTasks({
+        tasks: state.tasks,
+        direction: prevState.direction,
+        field: prevState.field,
+      }),
+    }));
+  }, [state.tasks]);
+
+  useEffect(() => {
+    document.title = 'Histórico - Chronos Pomodoro';
+  }, []);
+
+  useEffect(() => {
+    if (!confirmClearHistory) return;
+
+    setConfirmClearHistory(false);
+
+    dispatch({ type: TaskActionTypes.RESET_STATE });
+  }, [confirmClearHistory, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      showMessage.dismiss();
+    };
+  }, []);
+
+  function handleSortTasks({ field }: Pick<SortTasksOptions, 'field'>) {
+    const newDirection = sortTasksOptions.direction === 'desc' ? 'asc' : 'desc';
+
+    setSortTaskOptions({
+      tasks: sortTasks({
+        direction: newDirection,
+        tasks: sortTasksOptions.tasks,
+        field,
+      }),
+      direction: newDirection,
+      field,
+    });
+  }
+
+  function handleResetHistory() {
+    showMessage.dismiss();
+    showMessage.confirm('Tem certeza?', confirmation => {
+      setConfirmClearHistory(confirmation);
+    });
+  }
+
+  return (
+    <MainTemplate>
+      <Container>
+        <Heading>
+          <span>History</span>
+          {hasTasks && (
+            <span className={styles.buttonContainer}>
+              <DefaultButton
+                icon={<TrashIcon />}
+                color='red'
+                aria-label='Apagar todo o histórico'
+                title='Apagar histórico'
+                onClick={handleResetHistory}
+              />
+            </span>
+          )}
+        </Heading>
+      </Container>
+
+      <Container>
+        {hasTasks && (
+          <div className={styles.responsiveTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th
+                    onClick={() => handleSortTasks({ field: 'name' })}
+                    className={styles.thSort}
+                  >
+                    Tarefa ↕
+                  </th>
+                  <th
+                    onClick={() => handleSortTasks({ field: 'duration' })}
+                    className={styles.thSort}
+                  >
+                    Duração ↕
+                  </th>
+                  <th
+                    onClick={() => handleSortTasks({ field: 'startDate' })}
+                    className={styles.thSort}
+                  >
+                    Data ↕
+                  </th>
+                  <th>Status</th>
+                  <th>Tipo</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sortTasksOptions.tasks.map(task => {
+                  const taskTypeDictionary = {
+                    workTime: 'Foco',
+                    shortBreakTime: 'Descanso curto',
+                    longBreakTime: 'Descanso longo',
+                  };
+                  return (
+                    <tr key={task.id}>
+                      <td>{task.name}</td>
+                      <td>{task.duration}min</td>
+                      <td>{formatDate(task.startDate)}</td>
+                      <td>{getTaskStatus(task, state.activeTask)}</td>
+                      <td>{taskTypeDictionary[task.type]}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!hasTasks && (
+          <p style={{ textAlign: 'center', fontWeight: 'bold' }}>
+            Ainda não existem tarefas criadas.
+          </p>
+        )}
+      </Container>
+    </MainTemplate>
+  );
+}
 ```
 
-Revise também `display_override` se o gerador incluir opções que você não quiser (a aula comenta preferência por janela simples).
+### `src/pages/Settings/index.tsx`
 
-## Passo 4 — Áudios em `src/assets/audios/`
+```tsx
+import { SaveIcon } from 'lucide-react';
+import { Container } from '../../components/Container';
+import { DefaultButton } from '../../components/DefaultButton';
+import { DefaultInput } from '../../components/DefaultInput';
+import { Heading } from '../../components/Heading';
+import { MainTemplate } from '../../templates/MainTemplate';
+import { useTaskContext } from '../../contexts/TaskContext';
+import { useEffect, useRef } from 'react';
+import { showMessage } from '../../adapters/showMessage';
+import { TaskActionTypes } from '../../contexts/TaskContext/taskActions';
 
-Coloque um ou mais arquivos **`.mp3`** (ou `.ogg`) nesta pasta. No projeto de referência existem, por exemplo:
+export function Settings() {
+  const { state, dispatch } = useTaskContext();
+  const workTimeInput = useRef<HTMLInputElement>(null);
+  const shortBreakTimeInput = useRef<HTMLInputElement>(null);
+  const longBreakTimeInput = useRef<HTMLInputElement>(null);
 
-- `gravitational_beep.mp3` — som citado na aula (inspiração em ondas gravitacionais / “bip” discreto).
-- Outras opções na mesma pasta para experimentar: `beep.mp3`, `tic_tac_planeta_miller.mp3`, etc.
+  useEffect(() => {
+    document.title = 'Configurações - Chronos Pomodoro';
+  }, []);
 
-**Onde baixar sons gratuitos (verifique sempre a licença):**
+  function handleSaveSettings(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    showMessage.dismiss();
 
-- **[Freesound](https://freesound.org/)** — comunidade com filtros por licença (muitos CC0 / CC BY).
-- **[Mixkit](https://mixkit.co/free-sound-effects/)** — efeitos sonoros gratuitos para uso em projetos.
-- **[Pixabay](https://pixabay.com/sound-effects/)** — efeitos e músicas com licença própria do site.
-- **[Openverse](https://openverse.org/)** — busca agregada de mídia CC (inclui áudio).
+    const formErrors = [];
 
-Para o **“gravitational beep”** da narrativa da aula, muitas fontes citam divulgações da **LIGO/Virgo** (ondas gravitacionais convertidas em áudio) como material de divulgação científica — use cópias oficiais ou equivalentes com licença clara.
+    const workTime = Number(workTimeInput.current?.value);
+    const shortBreakTime = Number(shortBreakTimeInput.current?.value);
+    const longBreakTime = Number(longBreakTimeInput.current?.value);
 
-Nesta tarefa **basta** ter o arquivo no disco; **tocar** o som ao completar a task será implementado na próxima instrução (ex.: `Audio` ou `new Audio(url)` no fluxo do `COMPLETE_TASK` / Provider).
+    if (isNaN(workTime) || isNaN(shortBreakTime) || isNaN(longBreakTime)) {
+      formErrors.push('Digite apenas números para TODOS os campos');
+    }
+
+    if (workTime < 1 || workTime > 99) {
+      formErrors.push('Digite valores entre 1 e 99 para foco');
+    }
+
+    if (shortBreakTime < 1 || shortBreakTime > 30) {
+      formErrors.push('Digite valores entre 1 e 30 para descanso curto');
+    }
+
+    if (longBreakTime < 1 || longBreakTime > 60) {
+      formErrors.push('Digite valores entre 1 e 60 para descanso longo');
+    }
+
+    if (formErrors.length > 0) {
+      formErrors.forEach(error => {
+        showMessage.error(error);
+      });
+      return;
+    }
+
+    dispatch({
+      type: TaskActionTypes.CHANGE_SETTINGS,
+      payload: {
+        workTime,
+        shortBreakTime,
+        longBreakTime,
+      },
+    });
+    showMessage.success('Configurações salvas');
+  }
+
+  return (
+    <MainTemplate>
+      <Container>
+        <Heading>Configurações</Heading>
+      </Container>
+
+      <Container>
+        <p style={{ textAlign: 'center' }}>
+          Modifique as configurações para tempo de foco, descanso curso e
+          descanso longo.
+        </p>
+      </Container>
+
+      <Container>
+        <form onSubmit={handleSaveSettings} action='' className='form'>
+          <div className='formRow'>
+            <DefaultInput
+              id='workTime'
+              labelText='Foco'
+              ref={workTimeInput}
+              defaultValue={state.config.workTime}
+              type='number'
+            />
+          </div>
+          <div className='formRow'>
+            <DefaultInput
+              id='shortBreakTime'
+              labelText='Descanso curto'
+              ref={shortBreakTimeInput}
+              defaultValue={state.config.shortBreakTime}
+              type='number'
+            />
+          </div>
+          <div className='formRow'>
+            <DefaultInput
+              id='longBreakTime'
+              labelText='Descanso longo'
+              ref={longBreakTimeInput}
+              defaultValue={state.config.longBreakTime}
+              type='number'
+            />
+          </div>
+          <div className='formRow'>
+            <DefaultButton
+              icon={<SaveIcon />}
+              aria-label='Salvar configurações'
+              title='Salvar configurações'
+            />
+          </div>
+        </form>
+      </Container>
+    </MainTemplate>
+  );
+}
+```
+
+### `src/pages/AboutPomodoro/index.tsx`
+
+```tsx
+import { useEffect } from 'react';
+import { Container } from '../../components/Container';
+import { GenericHtml } from '../../components/GenericHtml';
+import { Heading } from '../../components/Heading';
+import { RouterLink } from '../../components/RouterLink';
+import { MainTemplate } from '../../templates/MainTemplate';
+
+export function AboutPomodoro() {
+  useEffect(() => {
+    document.title = 'Entenda a Técnica Pomodoro - Chronos Pomodoro';
+  }, []);
+
+  return (
+    <MainTemplate>
+      <Container>
+        <GenericHtml>
+          <Heading>A Técnica Pomodoro 🍅</Heading>
+          {/* ...restante do conteúdo permanece igual... */}
+        </GenericHtml>
+      </Container>
+    </MainTemplate>
+  );
+}
+```
+
+### `src/pages/NotFound/index.tsx`
+
+```tsx
+import { useEffect } from 'react';
+import { Container } from '../../components/Container';
+import { GenericHtml } from '../../components/GenericHtml';
+import { Heading } from '../../components/Heading';
+import { RouterLink } from '../../components/RouterLink';
+import { MainTemplate } from '../../templates/MainTemplate';
+
+export function NotFound() {
+  useEffect(() => {
+    document.title = 'Página não encontrada - Chronos Pomodoro';
+  }, []);
+
+  return (
+    <MainTemplate>
+      <Container>
+        <GenericHtml>
+          <Heading>404 - Página não encontrada 🚀</Heading>
+          {/* ...restante do conteúdo permanece igual... */}
+        </GenericHtml>
+      </Container>
+    </MainTemplate>
+  );
+}
+```
+
+---
 
 ## Checklist
 
-- [ ] Arquivos de favicon + `site.webmanifest` copiados para `public/images/` ou `public/images/favicon/`.
-- [ ] `index.html` com `<title>Chronos Pomodoro</title>` (ou nome final do app) e `<link>`s coerentes com os caminhos reais.
-- [ ] `site.webmanifest` com `icons[].src` apontando para arquivos que existem em `public/`.
-- [ ] Pelo menos um `.mp3` em `src/assets/audios/` para o alerta de fim de ciclo.
-- [ ] Teste: abrir o app, ver ícone na aba; no Chrome, ver opção de instalar / atalho (quando os critérios de PWA forem atendidos).
-
-## Referência rápida de pastas no repositório
-
-- `projeto-pomodoro/chronos-pomodoro/public/images/` — assets estáticos servidos em `/images/...`
-- `projeto-pomodoro/chronos-pomodoro/src/assets/audios/` — áudios importados pelo código React/Vite
+- [ ] Cada página principal define seu próprio `document.title`.
+- [ ] `useEffect` usa dependências vazias (`[]`) para rodar no carregamento da página.
+- [ ] Os títulos seguem um padrão consistente com `Chronos Pomodoro`.
+- [ ] Navegar entre rotas atualiza corretamente o texto da aba.
