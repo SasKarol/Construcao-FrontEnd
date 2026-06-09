@@ -63,7 +63,6 @@ export function MainForm() {
     showMessage.dismiss();
     showMessage.error('Tarefa interrompida!');
 
-    // Persiste interrupt na API
     if (state.activeTask) {
       tasksApi.interrupt(state.activeTask.id, Date.now()).catch(() => {});
     }

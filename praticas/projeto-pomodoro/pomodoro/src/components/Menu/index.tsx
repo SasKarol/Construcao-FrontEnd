@@ -1,17 +1,20 @@
 import {
   HistoryIcon,
   HouseIcon,
+  LogOutIcon,
   MoonIcon,
   SettingsIcon,
   SunIcon,
 } from 'lucide-react';
 import styles from './styles.module.css';
-import { useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { RouterLink } from '../RouterLink';
+import { AuthContext } from '../../contexts/AuthContext/AuthContext';
 
 type AvailableThemes = 'dark' | 'light';
 
 export function Menu() {
+  const { logout } = useContext(AuthContext);
   const [theme, setTheme] = useState<AvailableThemes>(() => {
     const storageTheme =
       (localStorage.getItem('theme') as AvailableThemes) || 'dark';
@@ -77,6 +80,16 @@ export function Menu() {
       >
         {nextThemeIcon[theme]}
       </a>
+
+      <button
+        className={styles.menuLink}
+        type='button'
+        aria-label='Sair'
+        title='Sair'
+        onClick={() => void logout()}
+      >
+        <LogOutIcon />
+      </button>
     </nav>
   );
 }

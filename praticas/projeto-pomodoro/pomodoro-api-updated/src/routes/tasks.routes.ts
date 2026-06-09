@@ -1,7 +1,10 @@
 import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
+import { requireAuth } from "../middlewares/auth";
 
 export const tasksRouter = Router();
+
+tasksRouter.use(requireAuth);
 
 // Helper: serializa BigInt para número no JSON
 function serializeTask(task: Record<string, unknown>) {
@@ -23,9 +26,10 @@ function serializeTask(task: Record<string, unknown>) {
 }
 
 // GET /tasks — lista todas as tasks ordenadas por data
-tasksRouter.get("/", async (_req: Request, res: Response) => {
+tasksRouter.get("/", async (req: Request, res: Response) => {
   try {
     const tasks = await prisma.task.findMany({
+      where: { userId: req.user!.id },
       orderBy: { startDate: "desc" },
     });
 
@@ -78,6 +82,7 @@ tasksRouter.post("/", async (req: Request, res: Response) => {
     const task = await prisma.task.create({
       data: {
         id,
+        userId: req.user!.id,
         name,
         duration,
         type,
@@ -115,7 +120,9 @@ tasksRouter.patch("/:id/complete", async (req: Request, res: Response) => {
       });
     }
 
-    const existing = await prisma.task.findUnique({ where: { id } });
+    const existing = await prisma.task.findFirst({
+      where: { id, userId: req.user!.id },
+    });
     if (!existing) {
       return res.status(404).json({ message: "Task não encontrada." });
     }
@@ -144,7 +151,9 @@ tasksRouter.patch("/:id/interrupt", async (req: Request, res: Response) => {
       });
     }
 
-    const existing = await prisma.task.findUnique({ where: { id } });
+    const existing = await prisma.task.findFirst({
+      where: { id, userId: req.user!.id },
+    });
     if (!existing) {
       return res.status(404).json({ message: "Task não encontrada." });
     }
@@ -162,9 +171,9 @@ tasksRouter.patch("/:id/interrupt", async (req: Request, res: Response) => {
 });
 
 // DELETE /tasks — limpa todo o histórico
-tasksRouter.delete("/", async (_req: Request, res: Response) => {
+tasksRouter.delete("/", async (req: Request, res: Response) => {
   try {
-    await prisma.task.deleteMany();
+    await prisma.task.deleteMany({ where: { userId: req.user!.id } });
     return res.status(204).send();
   } catch (error) {
     console.error("Erro ao deletar tasks:", error);
