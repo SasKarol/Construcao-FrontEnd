@@ -56,7 +56,7 @@ export function TaskContextProvider({ children }: TaskContextProviderProps) {
           interruptDate: t.interruptDate,
           type: t.type as TaskStateModel['config'] extends Record<infer K, unknown> ? K : never,
         })),
-      });
+    });
     }).catch(() => {
       // API offline: usa localStorage
       const storageState = localStorage.getItem('state');
@@ -72,15 +72,18 @@ export function TaskContextProvider({ children }: TaskContextProviderProps) {
   useEffect(() => {
     worker.onmessage(e => {
       const countDownSeconds = e.data;
+    
       if (countDownSeconds <= 0) {
         if (playBeepRef.current) {
           playBeepRef.current();
           playBeepRef.current = null;
         }
         // Persiste complete na API
+
         if (state.activeTask) {
           tasksApi.complete(state.activeTask.id, Date.now()).catch(() => {});
         }
+
         dispatch({ type: TaskActionTypes.COMPLETE_TASK });
         worker.terminate();
       } else {
@@ -95,7 +98,6 @@ export function TaskContextProvider({ children }: TaskContextProviderProps) {
   useEffect(() => {
     // Salva no localStorage como fallback
     localStorage.setItem('state', JSON.stringify(state));
-
     if (!state.activeTask) {
       worker.terminate();
     }

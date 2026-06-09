@@ -11,7 +11,9 @@
   justify-content: center;
   text-decoration: none;
   background: var(--primary);
+  border: 0;
   color: var(--text-over-primary);
+  cursor: pointer;
   transition: all 0.1s ease-in-out;
   padding: 1.2rem;
   border-radius: 0.8rem;

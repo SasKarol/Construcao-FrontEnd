@@ -1,55 +1,115 @@
-import React, { createContext, useReducer, type ReactNode } from 'react';
+import { createContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  authApi,
+  clearAuthToken,
+  getAuthToken,
+  setAuthToken,
+  type AuthUser,
+} from '../../services/api';
 
-interface AuthState {
+type RegisterData = {
+  name: string;
+  email: string;
+  password: string;
+};
+
+type AuthContextType = {
   isAuthenticated: boolean;
-  user: string | null;
-}
+  isLoading: boolean;
+  user: AuthUser | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  forgotPassword: (email: string) => Promise<string | undefined>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
 
-interface AuthContextType extends AuthState {
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
-}
-
-type AuthAction = { type: 'LOGIN'; payload: string } | { type: 'LOGOUT' };
-
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType>(
   {} as AuthContextType,
 );
 
-const initialState: AuthState = {
-  isAuthenticated: false,
-  user: null,
-};
-
-function authReducer(state: AuthState, action: AuthAction) {
-  switch (action.type) {
-    case 'LOGIN':
-      return { isAuthenticated: true, user: action.payload };
-    case 'LOGOUT':
-      return { isAuthenticated: false, user: null };
-    default:
-      return state;
-  }
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (username: string, password: string) => {
-    if (username === 'admin' && password === '1234') {
-      dispatch({ type: 'LOGIN', payload: username });
-      return true;
+  useEffect(() => {
+    function handleInvalidSession() {
+      setUser(null);
     }
-    return false;
-  };
 
-  const logout = () => {
-    dispatch({ type: 'LOGOUT' });
-  };
+    window.addEventListener('auth:logout', handleInvalidSession);
+
+    async function restoreSession() {
+      const token = getAuthToken();
+
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await authApi.me();
+        setUser(response.user);
+      } catch {
+        clearAuthToken();
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      window.removeEventListener('auth:logout', handleInvalidSession);
+    };
+  }, []);
+
+  async function login(email: string, password: string) {
+    const response = await authApi.login({ email, password });
+    setAuthToken(response.token);
+    setUser(response.user);
+  }
+
+  async function register(data: RegisterData) {
+    const response = await authApi.register(data);
+    setAuthToken(response.token);
+    setUser(response.user);
+  }
+
+  async function forgotPassword(email: string) {
+    const response = await authApi.forgotPassword(email);
+    return response.resetToken;
+  }
+
+  async function resetPassword(token: string, password: string) {
+    await authApi.resetPassword({ token, password });
+  }
+
+  async function logout() {
+    try {
+      await authApi.logout();
+    } catch {
+      // Mesmo com a API indisponivel, a sessao local deve ser encerrada.
+    } finally {
+      clearAuthToken();
+      setUser(null);
+    }
+  }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!user,
+        isLoading,
+        user,
+        login,
+        register,
+        forgotPassword,
+        resetPassword,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

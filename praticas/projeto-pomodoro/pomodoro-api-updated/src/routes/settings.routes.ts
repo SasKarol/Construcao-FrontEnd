@@ -1,16 +1,26 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { requireAuth } from '../middlewares/auth';
 
 export const settingsRouter = Router();
 
+settingsRouter.use(requireAuth);
+
 // GET /settings — retorna settings (cria defaults se não existir)
-settingsRouter.get('/', async (_req: Request, res: Response) => {
+settingsRouter.get('/', async (req: Request, res: Response) => {
   try {
-    let settings = await prisma.settings.findUnique({ where: { id: 1 } });
+    let settings = await prisma.settings.findUnique({
+      where: { userId: req.user!.id },
+    });
 
     if (!settings) {
       settings = await prisma.settings.create({
-        data: { id: 1, workTime: 25, shortBreakTime: 5, longBreakTime: 15 },
+        data: {
+          userId: req.user!.id,
+          workTime: 25,
+          shortBreakTime: 5,
+          longBreakTime: 15,
+        },
       });
     }
 
@@ -51,9 +61,14 @@ settingsRouter.put('/', async (req: Request, res: Response) => {
     }
 
     const settings = await prisma.settings.upsert({
-      where: { id: 1 },
+      where: { userId: req.user!.id },
       update: { workTime, shortBreakTime, longBreakTime },
-      create: { id: 1, workTime, shortBreakTime, longBreakTime },
+      create: {
+        userId: req.user!.id,
+        workTime,
+        shortBreakTime,
+        longBreakTime,
+      },
     });
 
     return res.json(settings);
